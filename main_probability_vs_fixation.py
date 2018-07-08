@@ -76,7 +76,6 @@ if __name__ == '__main__':
                 prob_fix_arr[num_last_fix-1] = prob
             prob_fix_arr = prob_fix_arr.T
             all_prob_fix_arr.append(prob_fix_arr)
-        all_prob_fix_arr = np.array(all_prob_fix_arr)
         
         # make directories:
 	    if not os.path.exists('network/probability_vs_fixation'):
