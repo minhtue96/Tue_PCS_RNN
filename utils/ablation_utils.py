@@ -20,6 +20,8 @@ def modify_sequences_in_slide(sequences_in_slide, num_last_arg, mode, section):
     for subject_id in range(NUM_SUBJECTS):
         ret_seqs[subject_id] = np.copy(sequences_in_slide[subject_id])
     
+    if mode=='discard' and section=='post':
+        ret_seqs = list(ret_seqs)
     #modify sequences
     for subject_id in range(NUM_SUBJECTS):
         if num_last_arg == 'half':

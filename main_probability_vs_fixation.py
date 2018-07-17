@@ -34,15 +34,15 @@ if __name__ == '__main__':
 
     args = parser.parse_args()
     
-    if args.from_scratch:
+    # Load data
+    load_data = LoadData()
+    slide_sequences, slide_selections = load_data.get_RNN_data_selection()
+    max_sequence_lengths = load_data.get_max_sequence_lengths()
+    NUM_SUBJECTS = slide_selections.shape[1]
+    _, _, _, corr_imgs = load_data.get_other_var()
     
-        # Load data and models
-        load_data = LoadData()
-        slide_sequences, slide_selections = load_data.get_RNN_data_selection()
-        max_sequence_lengths = load_data.get_max_sequence_lengths()
-        NUM_SUBJECTS = slide_selections.shape[1]
-        _, _, _, corr_imgs = load_data.get_other_var()
-
+    if args.from_scratch:
+        #Load models
         network = Network()
         network.load_models("SELECTION")
         models = network.get_models()   #NUM_SLIDES x k model (each slide has k folds)
@@ -58,13 +58,13 @@ if __name__ == '__main__':
             mod = models[slide_id]
             max_len = max_sequence_lengths[slide_id]
             y = slide_selections[slide_id]
-            corr_img = corr_imgs[slide_id]
             
             # Calculate the probabilities of choosing each of the 6 images with m last fixations (1 <= m <= max_len)
             # Probabilities in this case means the average probability of all subjects
             prob_fix_arr = np.zeros((max_len, NUM_IMAGES))    #Will take transpose at the end so that prob of choosing image i with m last fixations is at element (i,m)
             for num_last_fix in range(1, max_len+1):
-                ablated_sequence = modify_sequences_in_slide(sequence, num_last_fix, 'discard', 'pre')
+                post_pad_sequence = pad_sequences(sequence,padding='post')
+                ablated_sequence = modify_sequences_in_slide(post_pad_sequence, num_last_fix, 'discard', 'post')
                 X = pad_sequences(ablated_sequence, maxlen=max_len)
                 prob = np.zeros(6)
                 fold = 0
@@ -90,9 +90,13 @@ if __name__ == '__main__':
     
     if args.plot:
         for slide_id in range(NUM_SLIDES):
+            max_len = max_sequence_lengths[slide_id]
+            corr_img = corr_imgs[slide_id]
+            prob_fix_arr = all_prob_fix_arr[slide_id]
+            
             # Plot the probabilities against number of last fixations
             plt.figure()
-            plt.xlabel('Number of last fixations', fontsize=15)
+            plt.xlabel('Number of last fixations discarded', fontsize=15)
             x_axis = np.arange(1, max_len+1)
             plt.ylabel('Probability of choosing each slide', fontsize=15)
             legend_names = []
