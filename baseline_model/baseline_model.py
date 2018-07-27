@@ -19,7 +19,8 @@ class BaselineModel:
         stratified_kfold = StratifiedKFold(n_splits=k, shuffle=True, random_state=seed)
         logreg_mod = []
         logreg_pred,logreg_prob = np.empty((NUM_SLIDES,NUM_SUBJECTS)),np.empty((NUM_SLIDES,NUM_SUBJECTS))
-        logreg_acc,logreg_auc,logreg_conf = np.empty((NUM_SLIDES,k)),np.empty((NUM_SLIDES,k)),np.empty((NUM_SLIDES,k,2,2))
+        #logreg_acc,logreg_auc,logreg_conf = np.empty((NUM_SLIDES,k)),np.empty((NUM_SLIDES,k)),np.empty((NUM_SLIDES,k,2,2))     #uncomment for correct/incorrect model
+        logreg_acc = np.empty((NUM_SLIDES,k))   #uncomment for selection model
         for slide_id in range(NUM_SLIDES):
             X,y = load_baseline_data(slide_sequences, slide_labels, correct_images, slide_id, num_features=num_features, feature=feature)
             logreg_mod.append([])
@@ -29,9 +30,9 @@ class BaselineModel:
                 log_reg.fit(X[train], y[train])
                 y_pred = log_reg.predict(X[test])
                 y_prob = log_reg.predict_proba(X[test])[:,1]
-                logreg_conf[slide_id,fold] = confusion_matrix(y[test],y_pred)
+                #logreg_conf[slide_id,fold] = confusion_matrix(y[test],y_pred)   #uncomment for correct/incorrect model
                 logreg_acc[slide_id,fold] = accuracy_score(y[test],y_pred)
-                logreg_auc[slide_id,fold] = roc_auc_score(y[test],y_prob)
+                #logreg_auc[slide_id,fold] = roc_auc_score(y[test],y_prob)       #uncomment for correct/incorrect model
                 logreg_pred[slide_id,test] = y_pred
                 logreg_prob[slide_id,test] = y_prob
                 logreg_mod[slide_id].append(log_reg)
@@ -39,8 +40,8 @@ class BaselineModel:
         
         self.model = np.array(logreg_mod)
         self.accuracy = logreg_acc
-        self.confusion_matrix = logreg_conf
-        self.auc_score = logreg_auc
+        #self.confusion_matrix = logreg_conf     #uncomment for correct/incorrect model
+        #self.auc_score = logreg_auc     #uncomment for correct/incorrect model
         self.y_predict = logreg_pred
         self.y_probability = logreg_prob
     

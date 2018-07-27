@@ -96,6 +96,7 @@ class Network:  #after making a Network object, the first thing to do is either 
                 y_pred = model.predict_classes(X[test], verbose=0).flatten()
                 y_preds[test] = y_pred
                 conf_matrix = confusion_matrix(y[test], y_pred)
+                
 		if model_type_name == "SELECTION" and conf_matrix.shape != (6, 6):
 			conf_dict = {}
 			for i in range(0, conf_matrix.shape[0]):
@@ -114,13 +115,14 @@ class Network:  #after making a Network object, the first thing to do is either 
 
 						new_conf_mat[i, j] = conf_dict[(i, j)]
 			conf_matrix = new_conf_mat
+		
                 conf_matrices.append(conf_matrix)
                 acc = accuracy_score(y[test], y_pred)
                 cvscores.append(acc)
                 y_prob = model.predict(X[test])
                 y_probs[test] = y_prob
 		if should_save_auc:
-                	auc = roc_auc_score(y[test], y_prob)
+                	auc = roc_auc_score(y_cat[test], y_prob)
                 	auc_scores.append(auc)
                 	print('\tAUC:', auc)
                 
@@ -233,7 +235,7 @@ class Network:  #after making a Network object, the first thing to do is either 
         '''
         return: list of 21 elements, each is the total confusion matrices of the 5 folds in a paricular slide
         '''
-	import pdb; pdb.set_trace()
+	#import pdb; pdb.set_trace()
         return self.confusion_matrix
         
     def get_y_predict(self):

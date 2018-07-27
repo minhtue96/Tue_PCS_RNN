@@ -4,7 +4,7 @@ seed = 7
 np.random.seed(seed)
 NUM_SLIDES = 21
 
-def modify_sequences_in_slide(sequences_in_slide, num_last_arg, mode, section):
+def modify_sequences_in_slide(sequences_in_slide, num_last_arg, mode, section, num_first_arg=None):
     '''
     sequences_in_slide: list of NUM_SUBJECTS elements, each is the sequence of that subject
     num_last: number of fixations at the end of sequences that we care about. Can be an integer, or 'half' i.e. half of the sequence
@@ -20,25 +20,26 @@ def modify_sequences_in_slide(sequences_in_slide, num_last_arg, mode, section):
     for subject_id in range(NUM_SUBJECTS):
         ret_seqs[subject_id] = np.copy(sequences_in_slide[subject_id])
     
-    if mode=='discard' and section=='post':
-        ret_seqs = list(ret_seqs)
     #modify sequences
     for subject_id in range(NUM_SUBJECTS):
-        if num_last_arg == 'half':
-            num_last = int(len(ret_seqs[subject_id])/2)
+        if num_first_arg != None and mode=='keep' and section=='pre':
+            ret_seqs[subject_id] = ret_seqs[subject_id][:num_first_arg]
         else:
-            num_last = num_last_arg
-        if mode=='shuffle' and section=='pre':
-            np.random.shuffle(ret_seqs[subject_id][:-num_last])
-        elif mode=='shuffle' and section=='post':
-            np.random.shuffle(ret_seqs[subject_id][-num_last:])
-        elif mode=='discard' and section=='pre':
-            ret_seqs[subject_id] = ret_seqs[subject_id][-num_last:]
-        elif mode=='discard' and section=='post':
-            ret_seqs[subject_id] = ret_seqs[subject_id][:-num_last]
-        else:
-            print('Error: Invalid argument(s)')
-            break
+            if num_last_arg == 'half':
+                num_last = int(len(ret_seqs[subject_id])/2)
+            else:
+                num_last = num_last_arg
+            if mode=='shuffle' and section=='pre':
+                np.random.shuffle(ret_seqs[subject_id][:-num_last])
+            elif mode=='shuffle' and section=='post':
+                np.random.shuffle(ret_seqs[subject_id][-num_last:])
+            elif mode=='discard' and section=='pre':
+                ret_seqs[subject_id] = ret_seqs[subject_id][-num_last:]
+            elif mode=='discard' and section=='post':
+                ret_seqs[subject_id] = ret_seqs[subject_id][:-num_last]
+            else:
+                print('Error: Invalid argument(s)')
+                break
     return ret_seqs
 
 
