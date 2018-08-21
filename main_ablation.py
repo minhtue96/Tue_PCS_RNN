@@ -30,14 +30,21 @@ if __name__ == '__main__':
     parser.add_argument('--acc', help='Show accuracies', action="store_true")
     parser.add_argument('--auc', help='Show auc_scores', action="store_true")
     
+    model_type_name = "CORRECT"
+    print("model_type_name: ", model_type_name)
     load_data = LoadData()
-    slide_sequences, slide_labels = load_data.get_RNN_data()
+    if model_type_name == "SELECTION":
+        slide_sequences, slide_labels = load_data.get_RNN_data_selection()
+    else:
+        slide_sequences, slide_labels = load_data.get_RNN_data()
     max_sequence_lengths = load_data.get_max_sequence_lengths()
 
     args = parser.parse_args()
     
+    
+    
     network = Network()
-    network.load_models()
+    network.load_models(model_type_name)
     model = network.get_models()
     
     method = int(args.method)
@@ -57,7 +64,7 @@ if __name__ == '__main__':
     elif method == 7:
         ablated_sequences = modify_all_sequences(slide_sequences, 5, 'discard', 'post')
     
-    ablation = Ablation(slide_labels, model, max_sequence_lengths, ablated_sequences)
+    ablation = Ablation(slide_labels, model, max_sequence_lengths, ablated_sequences, model_type_name)
     
     if args.conf:
         print('DISPLAYING CONFUSION MATRICES:\n')

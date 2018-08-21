@@ -5,7 +5,7 @@ import numpy as np
 import tensorflow as tf
 import matplotlib.pyplot as plt
 import argparse
-
+from utils.ablation_utils import modify_all_sequences
 
 seed = 7
 np.random.seed(seed)
@@ -32,13 +32,22 @@ if __name__ == '__main__':
     parser.add_argument('--plot_val_loss', help='Plot validation losses', action="store_true")
     parser.add_argument('--output', help='Output dataframes to csv files', action="store_true")
     
+    parser.add_argument('--discard_last_dup', help='Discard all last fixations', action="store_true")
+    
     args = parser.parse_args()
     
     load_data = LoadData()
     slide_sequences, slide_selections = load_data.get_RNN_data_selection()
 
     network = Network()
-
+    
+    if args.discard_last_dup:
+        discard_last_dup_sequences = modify_all_sequences(slide_sequences, num_last_arg=None, mode='discard last dup', section=None)
+        print('slide_sequences[0][0]: ', slide_sequences[0][0])
+        print('discard_last_dup_sequences[0][0]: ', discard_last_dup_sequences[0][0])
+        print('slide_sequences[9][9]: ', slide_sequences[9][9])
+        print('discard_last_dup_sequences[9][9]: ', discard_last_dup_sequences[9][9])
+        slide_sequences = discard_last_dup_sequences
     
     if args.train:
         network.train_and_save(slide_sequences, slide_selections, "SELECTION", should_save_auc=False)
