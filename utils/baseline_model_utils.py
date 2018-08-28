@@ -16,8 +16,8 @@ def load_baseline_data(slide_sequences, slide_labels, correct_images, slide_id, 
     X = np.empty((NUM_SUBJECTS, num_features),dtype=float)
     y = slide_labels[slide_id]
     for subject_id in range(NUM_SUBJECTS):
-        if len(slide_sequences[slide_id,subject_id]) != 0:
-            count_fix = np.bincount(slide_sequences[slide_id,subject_id], minlength=8)
+        if len(slide_sequences[slide_id][subject_id]) != 0:
+            count_fix = np.bincount(slide_sequences[slide_id][subject_id], minlength=8)
             length = count_fix.sum()
         else:
             count_fix = np.zeros(8)

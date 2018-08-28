@@ -36,15 +36,15 @@ class Network:  #after making a Network object, the first thing to do is either 
     
     def train_and_save(self, slide_sequences, slide_labels, model_type_name, should_save_auc): #should saved() right after train()
 
-	if model_type_name == "SELECTION":
-		outputs = 6
+        if model_type_name == "SELECTION":
+                outputs = 6
         else:
-		outputs = 2
-	# make directories:
-	if not os.path.exists('network/models{}'.format(model_type_name)):
-		os.mkdir('network/models{}'.format(model_type_name))
-		os.mkdir('network/histories{}'.format(model_type_name))
-		os.mkdir('network/scores{}'.format(model_type_name))
+                outputs = 2
+        # make directories:
+        if not os.path.exists('network/models{}'.format(model_type_name)):
+                os.mkdir('network/models{}'.format(model_type_name))
+                os.mkdir('network/histories{}'.format(model_type_name))
+                os.mkdir('network/scores{}'.format(model_type_name))
 
         NUM_SUBJECTS = slide_labels.shape[1]
         max_sequence_lengths = []
@@ -60,11 +60,11 @@ class Network:  #after making a Network object, the first thing to do is either 
         for slide_id in range(NUM_SLIDES):
             X = slide_sequences_pad[slide_id]
             y = slide_labels[slide_id]
-	    if model_type_name == "SELECTION":
-		y = y - 1
-	    y_cat = np.zeros(shape=(y.shape[0], outputs))
-	    for i, y_i in enumerate(y):
-		y_cat[i, y_i] = 1
+            if model_type_name == "SELECTION":
+                y = y - 1
+            y_cat = np.zeros(shape=(y.shape[0], outputs))
+            for i, y_i in enumerate(y):
+                y_cat[i, y_i] = 1
 
             cvscores = []
             conf_matrices = []
@@ -81,51 +81,49 @@ class Network:  #after making a Network object, the first thing to do is either 
             
             for train, test in stratified_kfold.split(X, y):
                 class_weight = compute_class_weight(class_weight='balanced', 
-			classes=np.unique(y[train]), y=y[train])
+                        classes=np.unique(y[train]), y=y[train])
                 class_weight = dict(zip(np.unique(y[train]), class_weight))
 
                 model = make_model(max_sequence_len, outputs)
 
                 history = model.fit(X[train], y_cat[train], epochs=epochs, batch_size=64, 
-			class_weight=class_weight, verbose=0, 
-			validation_data=(X[test], y_cat[test]),
-			callbacks=[early_stopping])
+                        class_weight=class_weight, verbose=0, 
+                        validation_data=(X[test], y_cat[test]),
+                        callbacks=[early_stopping])
                 histories.append(history)
                 models.append(model)
                 
                 y_pred = model.predict_classes(X[test], verbose=0).flatten()
                 y_preds[test] = y_pred
                 conf_matrix = confusion_matrix(y[test], y_pred)
-                
-		if model_type_name == "SELECTION" and conf_matrix.shape != (6, 6):
-			conf_dict = {}
-			for i in range(0, conf_matrix.shape[0]):
-				for j in range(0, conf_matrix.shape[1]):
-					i_val = np.unique(np.append(y[test], y_pred))[i]
-					j_val = np.unique(np.append(y[test], y_pred))[j]
-					conf_dict[i_val, j_val] = conf_matrix[i, j]
+
+                if model_type_name == "SELECTION" and conf_matrix.shape != (6, 6):
+                    conf_dict = {}
+                    for i in range(0, conf_matrix.shape[0]):
+                        for j in range(0, conf_matrix.shape[1]):
+                            i_val = np.unique(np.append(y[test], y_pred))[i]
+                            j_val = np.unique(np.append(y[test], y_pred))[j]
+                            conf_dict[i_val, j_val] = conf_matrix[i, j]
 			
-			new_conf_mat = np.zeros(shape=(6, 6))
-			for i in range(0, 6):
-				for j in range(0, 6):
-
-					if (i, j) not in conf_dict:
-						new_conf_mat[i, j] = 0
-					else:
-
-						new_conf_mat[i, j] = conf_dict[(i, j)]
-			conf_matrix = new_conf_mat
+                    new_conf_mat = np.zeros(shape=(6, 6))
+                    for i in range(0, 6):
+                        for j in range(0, 6):
+                            if (i, j) not in conf_dict:
+                                new_conf_mat[i, j] = 0
+                            else:
+                                new_conf_mat[i, j] = conf_dict[(i, j)]
+                    conf_matrix = new_conf_mat
 		
                 conf_matrices.append(conf_matrix)
                 acc = accuracy_score(y[test], y_pred)
                 cvscores.append(acc)
                 y_prob = model.predict(X[test])
                 y_probs[test] = y_prob
-		if should_save_auc:
-                	auc = roc_auc_score(y_cat[test], y_prob)
-                	auc_scores.append(auc)
-                	print('\tAUC:', auc)
-                
+                if should_save_auc:
+                    auc = roc_auc_score(y_cat[test], y_prob)
+                    auc_scores.append(auc)
+                    print('\tAUC:', auc)
+
                 print('\tAccuracy:', acc)
                 print('\tConfusion matrix:\n', conf_matrix)
                 print('\n\n')
@@ -133,32 +131,32 @@ class Network:  #after making a Network object, the first thing to do is either 
                 #save model
                 print('Saving Slide', slide_id+1, 'Fold', fold+1)
                 model.save('network/models{}/model{}_{}.h5'.format(
-			model_type_name, slide_id+1, fold+1))
+                    model_type_name, slide_id+1, fold+1))
 
                 with open('network/histories{}/history{}_{}.pickle'.format(
-			model_type_name, slide_id+1, fold+1), 'wb') as pickle_file:
+                    model_type_name, slide_id+1, fold+1), 'wb') as pickle_file:
                     pickle.dump(history.history, pickle_file)
                 fold+=1
             
             cvscores = np.array(cvscores)
 
             conf_matrices = np.mean(np.dstack(conf_matrices), axis=2)
-	    if should_save_auc:
-            	auc_scores = np.array(auc_scores)
+            if should_save_auc:
+                auc_scores = np.array(auc_scores)
             
             accu.append(cvscores)
             conf.append(conf_matrices)
             if should_save_auc:
-		aucroc.append(auc_scores)
+                aucroc.append(auc_scores)
             pred.append(y_preds)
             prob.append(y_probs)
             hist.append(histories)
             mod.append(models)
         accu = np.array(accu)
 
-	conf = np.array(conf)
+        conf = np.array(conf)
         if should_save_auc:
-        	aucroc = np.array(aucroc)
+            aucroc = np.array(aucroc)
         pred = np.array(pred)
         prob = np.array(prob)
         hist = np.array(hist)
@@ -168,12 +166,12 @@ class Network:  #after making a Network object, the first thing to do is either 
         with open('network/scores{}/accuracies.pickle'.format(model_type_name), 'wb') as pickle_file:
             pickle.dump(accu, pickle_file)
         if should_save_auc:
-		filename = 'network/scores{}/auc_scores.pickle'.format(model_type_name)
-        	with open(filename, 'wb') as pickle_file:
-			pickle.dump(aucroc, pickle_file)
-	filename2 = 'network/scores{}/confusion_matrices.pickle'.format(model_type_name)
+            filename = 'network/scores{}/auc_scores.pickle'.format(model_type_name)
+            with open(filename, 'wb') as pickle_file:
+                pickle.dump(aucroc, pickle_file)
+        filename2 = 'network/scores{}/confusion_matrices.pickle'.format(model_type_name)
         with open(filename2, 'wb') as pickle_file:
-          	pickle.dump(conf, pickle_file)
+            pickle.dump(conf, pickle_file)
         with open('network/scores{}/y_predicts.pickle'.format(model_type_name), 'wb') as pickle_file:
             pickle.dump(pred, pickle_file)
         with open('network/scores{}/y_probabilities.pickle'.format(model_type_name), 'wb') as pickle_file:
@@ -181,8 +179,8 @@ class Network:  #after making a Network object, the first thing to do is either 
 
         self.accuracy = accu
         if should_save_auc:
-        	self.confusion_matrix = conf
-        	self.auc_score = aucroc
+            self.confusion_matrix = conf
+            self.auc_score = aucroc
         self.y_predict = pred
         self.y_probability = prob
         self.history = hist
@@ -193,10 +191,20 @@ class Network:  #after making a Network object, the first thing to do is either 
             for fold in range(self.k):
                 #load_models
                 print('Load model for slide', slide_id+1, 'fold', fold+1)
-		filename = 'network/models{}/model{}_{}.h5'.format(
-			model_type_name, slide_id+1, fold+1)
+                filename = 'network/models{}/model{}_{}.h5'.format(
+                        model_type_name, slide_id+1, fold+1)
                 self.model[slide_id].append(load_model(filename))
         self.model = np.array(self.model)
+    
+    def load_and_get_model_slide(self, model_type_name, slide_id):
+        model = []
+        for fold in range(self.k):
+            #load_models
+            print('Load model for slide', slide_id+1, 'fold', fold+1)
+            filename = 'network/models{}/model{}_{}.h5'.format(model_type_name, slide_id+1, fold+1)
+            model.append(load_model(filename))
+        return np.array(model)
+        
     
     def load_histories(self, model_type_name):
         self.history = []
@@ -204,14 +212,13 @@ class Network:  #after making a Network object, the first thing to do is either 
             self.history.append([])
             for fold in range(self.k):
                 #load histories
-		filename = 'network/histories{}/history{}_{}.pickle'.format(model_type_name, 
-			slide_id+1, fold+1)
+                filename = 'network/histories{}/history{}_{}.pickle'.format(model_type_name, slide_id+1, fold+1)
                 self.history[slide_id].append(pickle.load(open(filename, 'rb')))
         self.history = np.array(self.history)
         
     def load_results(self, model_type_name):
         #load accuracy, auc, conf matrix, y_predict, y_proba
-	filename = 'network/scores{}'.format(model_type_name) 
+        filename = 'network/scores{}'.format(model_type_name) 
         self.accuracy = pickle.load(open(filename+'/accuracies.pickle', 'rb'))
         #self.auc_score = pickle.load(open(filename+'/auc_scores.pickle', 'rb'))
         self.confusion_matrix = pickle.load(open(filename+'/confusion_matrices.pickle', 'rb'))
@@ -235,7 +242,7 @@ class Network:  #after making a Network object, the first thing to do is either 
         '''
         return: list of 21 elements, each is the total confusion matrices of the 5 folds in a paricular slide
         '''
-	#import pdb; pdb.set_trace()
+        #import pdb; pdb.set_trace()
         return self.confusion_matrix
         
     def get_y_predict(self):

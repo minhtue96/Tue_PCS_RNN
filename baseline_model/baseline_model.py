@@ -44,6 +44,10 @@ class BaselineModel:
         #self.auc_score = logreg_auc     #uncomment for correct/incorrect model
         self.y_predict = logreg_pred
         self.y_probability = logreg_prob
+        
+        self.correct_images = correct_images
+        self.num_features = num_features
+        self.feature = feature
     
     
     def get_accuracies(self):
@@ -81,5 +85,27 @@ class BaselineModel:
         return: list of 21 elements, each is a list of k models (for the k fold). Shape: NUM_SLIDES x k
         '''
         return self.model
-
+    
+    def calculate_slide_ablated_acc(self, ablated_sequences, slide_selections, slide_id, subjects_chosen_in_folds):
+        '''
+        ablated_sequence, ablated_selection: for 1 slide only
+        subjects_chosen_in_folds: list of k element, each is list of chosen subjects in each fold
+        '''
+        X,y = load_baseline_data(ablated_sequences, slide_selections, self.correct_images, slide_id, num_features=self.num_features, feature=self.feature)
+        slide_selection = slide_selections[slide_id]
+        k = self.k
+        model = self.model[slide_id]
+        acc = 0.
+        num_subjects_chosen = 0
+        for fold in range(k):
+            num_subjects_chosen += len(subjects_chosen_in_folds[fold])
+        for fold in range(k):
+            subjects_chosen_in_fold = subjects_chosen_in_folds[fold]
+            if subjects_chosen_in_fold == []:
+                continue
+            fold_pred = model[fold].predict(X[subjects_chosen_in_fold]).flatten()
+            num_pred_corr = len(subjects_chosen_in_fold) - np.count_nonzero(slide_selection[subjects_chosen_in_fold]-fold_pred)
+            acc += num_pred_corr
+        acc = acc / float(num_subjects_chosen)
+        return acc
         

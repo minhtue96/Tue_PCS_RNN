@@ -236,6 +236,7 @@ for train,test in stratified_kfold.split(X,y):
 from load_data.load_data import LoadData
 from network.network import Network
 from utils.ablation_utils import modify_sequences_in_slide
+from utils.ablation_utils import modify_all_sequences
 
 import numpy as np
 import tensorflow as tf
@@ -251,12 +252,32 @@ model_type_name = 'SELECTION'
 
 load_data = LoadData()
 slide_sequences, slide_selections = load_data.get_RNN_data_selection()
+
+##### #####
+discard_last_dup_sequences = modify_all_sequences(slide_sequences, num_last_arg=None, mode='discard last dup', section=None)
+print('slide_sequences[0][0]: ', slide_sequences[0][0])
+print('discard_last_dup_sequences[0][0]: ', discard_last_dup_sequences[0][0])
+print('slide_sequences[9][9]: ', slide_sequences[9][9])
+print('discard_last_dup_sequences[9][9]: ', discard_last_dup_sequences[9][9])
+slide_sequences = discard_last_dup_sequences
+##### #####
+
 NUM_SUBJECTS = slide_selections.shape[1]
 NUM_SLIDES=21
 NUM_IMAGES = 6
 k = 5
 network = Network()
 max_sequence_lengths = load_data.get_max_sequence_lengths()
+
+##### #####
+print('max_sequence_lengths[20] = ', max_sequence_lengths[20])
+for i in range(NUM_SLIDES):
+    longest_seq = max(slide_sequences[i], key=len)
+    max_sequence_lengths[i] = len(longest_seq)
+print('new max_sequence_lengths[20] = ', max_sequence_lengths[20])
+
+##### #####
+
 _, _, _, corr_imgs = load_data.get_other_var()
 stratified_kfold = StratifiedKFold(n_splits=k, shuffle=True, random_state=seed)
 
@@ -269,7 +290,7 @@ max_len = max_sequence_lengths[slide_id]
 
 num_div = 20        #inspect each sequence at 0, 1/num_div, 2/num_div, ... full sequence
 
-lower_len = 100
+lower_len = 50
 upper_len = max_len
 subjects_chosen = np.where((slide_sequence_len>=lower_len) & (slide_sequence_len<=upper_len))[0]      #subjects that have sequence length between lower_len and upper_len
 num_subjects_chosen = len(subjects_chosen)
@@ -389,6 +410,7 @@ print('Slide '+str(slide_id+1)+':', acc, '\n')
 from load_data.load_data import LoadData
 from network.network import Network
 from utils.ablation_utils import modify_sequences_in_slide
+from utils.ablation_utils import modify_all_sequences
 from baseline_model.baseline_model import BaselineModel
 
 import numpy as np
@@ -405,12 +427,32 @@ model_type_name = 'SELECTION'
 
 load_data = LoadData()
 slide_sequences, slide_selections = load_data.get_RNN_data() if (model_type_name == 'CORRECT') else load_data.get_RNN_data_selection()
+
+##### #####
+discard_last_dup_sequences = modify_all_sequences(slide_sequences, num_last_arg=None, mode='discard last dup', section=None)
+print('slide_sequences[0][0]: ', slide_sequences[0][0])
+print('discard_last_dup_sequences[0][0]: ', discard_last_dup_sequences[0][0])
+print('slide_sequences[9][9]: ', slide_sequences[9][9])
+print('discard_last_dup_sequences[9][9]: ', discard_last_dup_sequences[9][9])
+slide_sequences = discard_last_dup_sequences
+##### #####
+
 NUM_SUBJECTS = slide_selections.shape[1]
 NUM_SLIDES=21
 NUM_IMAGES = 6
 k = 5
 network = Network()
 max_sequence_lengths = load_data.get_max_sequence_lengths()
+
+##### #####
+print('max_sequence_lengths[20] = ', max_sequence_lengths[20])
+for i in range(NUM_SLIDES):
+    longest_seq = max(slide_sequences[i], key=len)
+    max_sequence_lengths[i] = len(longest_seq)
+print('new max_sequence_lengths[20] = ', max_sequence_lengths[20])
+
+##### #####
+
 _, _, _, corr_imgs = load_data.get_other_var()
 baseline_model = BaselineModel()
 baseline_model.train(slide_sequences, slide_selections, corr_imgs, num_features=6, feature=None)
@@ -425,7 +467,7 @@ max_len = max_sequence_lengths[slide_id]
 
 lower_len = 50
 upper_len = max_len
-subjects_chosen = np.where((slide_sequence_len>=0) & (slide_sequence_len<=upper_len))[0]      #subjects that have sequence length between lower_len and upper_len
+subjects_chosen = np.where((slide_sequence_len>=lower_len) & (slide_sequence_len<=upper_len))[0]      #subjects that have sequence length between lower_len and upper_len
 num_subjects_chosen = len(subjects_chosen)
 
 test_subjects_folds = []
@@ -483,7 +525,6 @@ legend_names = ['RNN', 'Baseline']
 plt.legend(legend_names, borderpad=3, labelspacing=2, prop={'size': 15})
 plt.title('Slide '+str(slide_id+1), fontsize=30)
 
-np.sort(slide_sequence_len)
 
 
 
